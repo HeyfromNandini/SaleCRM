@@ -1,14 +1,6 @@
 ![ForeFront.ai Banner](https://github.com/user-attachments/assets/74db9629-657f-43ba-bffe-68801e27fd06)
 
 <h1 align="center"> 🚀 ForeFront.ai – Bridging the Gap in CRM with AI </h1>  
-
-<p align="center">
-  <img src="https://img.shields.io/github/stars/yourusername/ForeFront.ai?color=yellow&style=for-the-badge">
-  <img src="https://img.shields.io/github/forks/yourusername/ForeFront.ai?color=blue&style=for-the-badge">
-  <img src="https://img.shields.io/github/issues/yourusername/ForeFront.ai?color=red&style=for-the-badge">
-  <img src="https://img.shields.io/badge/Made%20With-Kotlin%20💙-brightgreen?style=for-the-badge">
-</p>
-
 ---
 
 ## 🎨 **Revolutionizing CRM with AI**  
