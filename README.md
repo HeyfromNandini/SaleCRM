@@ -110,4 +110,4 @@ It brings **cultural sensitivity, AI-driven insights, and real-time feedback loo
 1️⃣ Ensure all dependencies are installed.  
 2️⃣ Clone the repository:  
    ```bash
-   git clone https://github.com/yourusername/ForeFront.ai.git
+   git clone https://github.com/y/HeyfromNandini/SaleCRM.git
