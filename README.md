@@ -39,13 +39,6 @@ It brings **cultural sensitivity, AI-driven insights, and real-time feedback loo
 
 ---
 
-## 🎥 **Demo Video**  
-
-📌 Watch ForeFront.ai in action:  
-[![Demo Video](https://img.shields.io/badge/▶️%20Watch%20Demo%20Video-FF0000?style=for-the-badge&logo=youtube)](https://youtu.be/ffCgEhOLXdk)  
-
----
-
 ## 📊 **Features Overview**  
 
 ### 🏠 **Dashboard**  
