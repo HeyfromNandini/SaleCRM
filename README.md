@@ -81,15 +81,6 @@ It brings **cultural sensitivity, AI-driven insights, and real-time feedback loo
 
 ---
 
-## 🔥 **GitHub Stats & Activity**  
-
-<p align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=yourusername&show_icons=true&theme=radical" width="400px">
-  <img src="https://streak-stats.demolab.com?user=yourusername&theme=radical" width="400px">
-</p>
-
----
-
 ## 🔧 **Steps to Run**  
 
 1️⃣ Ensure all dependencies are installed.  
