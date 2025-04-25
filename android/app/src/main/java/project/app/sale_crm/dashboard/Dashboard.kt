@@ -203,7 +203,7 @@ fun Dashboard(
 
                 ArcComposable(
                     modifier = Modifier.padding(end = 25.dp),
-                    text = "10%",
+                    text = "50%",
 //                            progress = animatedProgress
                 )
             }
@@ -315,7 +315,7 @@ fun Dashboard(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Lead 1: Kailash Sharma ")
+                            Text(text = "Lead 1: Laxman Choudhary ")
 
                             CustomCardButton(
                                 text = "Follow Up",
@@ -329,7 +329,7 @@ fun Dashboard(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Lead 2: Vignesh Gadhari ")
+                            Text(text = "Lead 2: Divya Varkhede")
 
                             CustomCardButton(
                                 text = "Contact",
@@ -339,7 +339,6 @@ fun Dashboard(
                             )
 
                         }
-
                     }
 
 
@@ -417,12 +416,6 @@ fun Dashboard(
                     text = "CRM Wise",
                     color = lastTextColor.copy(0.5f),
                     fontSize = 23.sp,
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = "Crafted with ❤️ by The Phoenix",
-                    color = lastTextColor.copy(0.75f),
-                    fontSize = 10.sp,
                 )
             }
 

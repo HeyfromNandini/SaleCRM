@@ -1,55 +1,52 @@
-package project.app.sale_crm.createlead
+package project.app.sale_crm.screens
 
-import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import kotlinx.coroutines.delay
-import project.app.sale_crm.dashboard.CustomCardButton
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import project.app.sale_crm.model.TipsResponse
 import project.app.sale_crm.service.ApiService
-import project.app.sale_crm.service.ApiServiceImpl
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.hilt.navigation.compose.hiltViewModel
-import project.app.sale_crm.screens.TipsScreen
 
 @Composable
-fun Tips(
-    navController: NavController,
+fun TipsScreen(
     contactId: String,
-    viewModel: TipsViewModel = hiltViewModel()
+    apiService: ApiService
 ) {
-    Log.d("Tips", "Tips composable initialized with contactId: $contactId")
-    
+    val tipsResponse = remember { MutableStateFlow<Result<TipsResponse>?>(null) }
+    val isLoading = remember { MutableStateFlow(false) }
+
     LaunchedEffect(contactId) {
-        Log.d("Tips", "LaunchedEffect triggered, calling getTips")
-        viewModel.getTips(contactId)
+        isLoading.value = true
+        tipsResponse.value = apiService.getRegionalTips(contactId)
+        isLoading.value = false
     }
 
-    val tipsResponse by viewModel.tipsResponse.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    
-    Log.d("Tips", "Current tipsResponse: $tipsResponse")
-    Log.d("Tips", "isLoading: $isLoading")
+    TipsContent(
+        tipsResponse = tipsResponse,
+        isLoading = isLoading
+    )
+}
+
+@Composable
+private fun TipsContent(
+    tipsResponse: StateFlow<Result<TipsResponse>?>,
+    isLoading: StateFlow<Boolean>
+) {
+    val response by tipsResponse.collectAsState()
+    val loading by isLoading.collectAsState()
 
     Box(
         modifier = Modifier
@@ -58,15 +55,14 @@ fun Tips(
             .padding(16.dp)
     ) {
         when {
-            isLoading -> {
-                Log.d("Tips", "Showing loading indicator")
+            loading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
                     color = Color.White
                 )
             }
-            tipsResponse != null -> {
-                tipsResponse?.fold(
+            else -> {
+                response?.fold(
                     onSuccess = { response ->
                         Column(
                             modifier = Modifier
@@ -75,7 +71,6 @@ fun Tips(
                         ) {
                             // Contact Details
                             response.contactDetails?.let { details ->
-                                Log.d("Tips", "Rendering contact details: $details")
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -84,14 +79,11 @@ fun Tips(
                                 ) {
                                     Column {
                                         Text(
-                                            text = details.name ?: "Contact",
-                                            fontSize = 24.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
+                                            text = (details.name ?: "Contact").toString()
                                         )
-                                        details.industry?.let { DetailText("Industry", it) }
-                                        details.region?.let { DetailText("Region", it) }
-                                        details.language?.let { DetailText("Language", it) }
+                                        details.industry?.let { DetailText("Industry", it.toString()) }
+                                        details.region?.let { DetailText("Region", it.toString()) }
+                                        details.language?.let { DetailText("Language", it.toString()) }
                                     }
                                 }
                             }
@@ -100,69 +92,52 @@ fun Tips(
 
                             // Regional Insights
                             response.aiInsights?.regionalInsights?.let { insights ->
-                                Log.d("Tips", "Rendering regional insights")
                                 // Business Culture
                                 InsightSection("Business Culture") {
                                     Text(
-                                        text = insights.businessCulture ?: "",
-                                        color = Color.White,
-                                        lineHeight = 24.sp
+                                        text = (insights.businessCulture ?: "").toString()
                                     )
                                 }
 
                                 // Local Customs
                                 InsightSection("Local Customs") {
                                     Text(
-                                        text = insights.localCustoms ?: "",
-                                        color = Color.White,
-                                        lineHeight = 24.sp
+                                        text = (insights.localCustoms ?: "").toString()
                                     )
                                 }
 
                                 // Language Tips
                                 InsightSection("Language Tips") {
                                     Text(
-                                        text = insights.languageTips ?: "",
-                                        color = Color.White,
-                                        lineHeight = 24.sp,
-                                        modifier = Modifier.padding(vertical = 4.dp)
+                                        text = (insights.languageTips ?: "").toString()
                                     )
                                 }
 
                                 // Festival Calendar
                                 InsightSection("Festival Calendar") {
                                     Text(
-                                        text = insights.festivalCalendar ?: "",
-                                        color = Color.White,
-                                        lineHeight = 24.sp,
-                                        modifier = Modifier.padding(vertical = 4.dp)
+                                        text = (insights.festivalCalendar ?: "").toString()
                                     )
                                 }
 
                                 // Business Protocols
                                 InsightSection("Business Protocols") {
                                     Text(
-                                        text = insights.businessProtocols ?: "",
-                                        color = Color.White,
-                                        lineHeight = 24.sp
+                                        text = (insights.businessProtocols ?: "").toString()
                                     )
                                 }
 
                                 // Market Dynamics
                                 InsightSection("Market Dynamics") {
                                     Text(
-                                        text = insights.marketDynamics ?: "",
-                                        color = Color.White,
-                                        lineHeight = 24.sp
+                                        text = (insights.marketDynamics ?: "").toString()
                                     )
                                 }
 
                                 // Industry Trends
                                 InsightSection("Industry Trends") {
                                     Text(
-                                        text = insights.industryTrends ?: "",
-                                        color = Color.White,
-                                        lineHeight = 24.sp
+                                        text = (insights.industryTrends ?: "").toString()
                                     )
                                 }
 
@@ -170,28 +145,19 @@ fun Tips(
                                 insights.culturalNuances?.let { nuances ->
                                     InsightSection("Key Considerations") {
                                         Text(
-                                            text = nuances.keyConsiderations ?: "",
-                                            color = Color.White,
-                                            lineHeight = 24.sp,
-                                            modifier = Modifier.padding(vertical = 4.dp)
+                                            text = (nuances.keyConsiderations ?: "").toString()
                                         )
                                     }
 
                                     InsightSection("Traditions") {
                                         Text(
-                                            text = nuances.traditions ?: "",
-                                            color = Color.White,
-                                            lineHeight = 24.sp,
-                                            modifier = Modifier.padding(vertical = 4.dp)
+                                            text = (nuances.traditions ?: "").toString()
                                         )
                                     }
 
                                     InsightSection("Etiquette") {
                                         Text(
-                                            text = nuances.etiquette ?: "",
-                                            color = Color.White,
-                                            lineHeight = 24.sp,
-                                            modifier = Modifier.padding(vertical = 4.dp)
+                                            text = (nuances.etiquette ?: "").toString()
                                         )
                                     }
                                 }
@@ -199,31 +165,16 @@ fun Tips(
                         }
                     },
                     onFailure = { error ->
-                        Log.e("Tips", "Error displaying tips", error)
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Error loading tips: ${error.message}",
-                                color = Color.Red,
-                                fontSize = 16.sp
+                                text = "Error loading tips: ${error.message}".toString()
                             )
                         }
                     }
                 )
-            }
-            else -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No tips available",
-                        color = Color.White,
-                        fontSize = 16.sp
-                    )
-                }
             }
         }
     }
@@ -233,15 +184,10 @@ fun Tips(
 private fun DetailText(label: String, value: String) {
     Column(modifier = Modifier.padding(vertical = 4.dp)) {
         Text(
-            text = label,
-            fontSize = 14.sp,
-            color = Color.LightGray
+            text = label.toString()
         )
         Text(
-            text = value,
-            fontSize = 16.sp,
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold
+            text = value.toString()
         )
     }
 }
@@ -257,10 +203,7 @@ private fun InsightSection(
             .padding(vertical = 8.dp)
     ) {
         Text(
-            text = title,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
+            text = title.toString(),
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Box(
@@ -277,5 +220,4 @@ private fun InsightSection(
             modifier = Modifier.padding(vertical = 8.dp)
         )
     }
-}
-
+} 

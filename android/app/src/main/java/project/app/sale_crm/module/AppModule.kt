@@ -11,10 +11,10 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.serialization.kotlinx.json.json
+import javax.inject.Singleton
 import kotlinx.serialization.ExperimentalSerializationApi
 import project.app.sale_crm.service.ApiService
 import project.app.sale_crm.service.ApiServiceImpl
-import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -26,16 +26,17 @@ object AppModule {
     fun provideHttpClient(): HttpClient {
         return HttpClient(CIO) {
             install(ContentNegotiation) {
-                json(json = kotlinx.serialization.json.Json {
-                    ignoreUnknownKeys = true
-                     encodeDefaults = true
-                })
+                json(
+                        json =
+                                kotlinx.serialization.json.Json {
+                                    ignoreUnknownKeys = true
+                                    encodeDefaults = true
+                                }
+                )
             }
             install(Logging)
             install(WebSockets)
-            install(HttpTimeout) {
-                requestTimeoutMillis = 1000000
-            }
+            install(HttpTimeout) { requestTimeoutMillis = 1000000 }
         }
     }
 

@@ -133,16 +133,22 @@ const generatePrompt = (input, isCompany) => {
   }
 };
 
+// Add this helper function at the top after the imports
+const cleanGeminiResponse = (response) => {
+    return response
+        .replace(/```json\n/g, '')  // Remove opening JSON code block
+        .replace(/```\n/g, '')      // Remove closing code block
+        .replace(/```/g, '')        // Remove any remaining code block markers
+        .trim();                    // Remove extra whitespace
+};
+
 // Controller function for extracting user or company details
 const extractDetails = async (req, res) => {
   try {
-    const { userInput } = req.body; // Expecting JSON input
-
-    // Automatically identify if the input is for a company or contact
+    const { userInput } = req.body;
     const isCompany = identifyInputType(userInput);
     const prompt = generatePrompt(userInput, isCompany === 'company');
 
-    // Create chat session with the prompt
     const chatSession = model.startChat({
       generationConfig,
       history: [],
@@ -152,15 +158,17 @@ const extractDetails = async (req, res) => {
     
     let responseData;
     try {
-      responseData = response.response.text().replace('json','');
-      responseData = responseData.replaceAll('```','');
-      responseData = JSON.parse(responseData.replaceAll('\n',''));
+      responseData = cleanGeminiResponse(response.response.text());
+      responseData = JSON.parse(responseData);
     } catch (jsonError) {
-        console.log(responseData)
-      return res.status(500).json({ error: "Failed to parse response as JSON." });
+      console.error('JSON Parse Error:', jsonError);
+      return res.status(500).json({ 
+        error: "Failed to parse response as JSON",
+        details: response.response.text()
+      });
     }
 
-    res.json(responseData); // Send the response back to the user in JSON format
+    res.json(responseData);
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: error.message });
@@ -174,22 +182,24 @@ const ai_summarize = async(input) =>{
     const prompt = `Act as an Indian sales advisor specializing in providing sales summary for their clients, specializing in giving advice tailored to indians, their languague, culture, festivals, language. 
 
     Generate a summary of a client based on the given information, generate a summary for a client, include their  include all the information you are given which is not null for the below advice,  you may include their Main skill or expertise, professional background,their goals, their engagement style: which will include their preferences, language and anything include in hs_content_membership_notes, also talk about tailored advice related to their city, cultural affinity, socio_economic_segment, industry. Also talk about their challenges that they might face based on the key factors, their value proposition, suggestiosns based on their field. and if there exists a field called next_activity_date with any value other thane null. Make it structured and simplified.
-    Client info, donot provide any information that is provided below as is, give a suggestion based on a field if mentioned:${input}
-    `;
 
-    // Create chat session with the prompt
+    IMPORTANT: Return the response as plain text without any markdown formatting or code blocks.
+
+    Client info: ${input}`;
+
     const chatSession = model.startChat({
       generationConfig,
       history: [],
     });
     
     const response = await chatSession.sendMessage(prompt);
+    response.response.text = () => cleanGeminiResponse(response.response.text());
     return response;
   } catch (error) {
     console.error(error.message);
-    res.status(500).json({ error: error.message });
+    throw error;
   }
-}
+};
 
 function generateRecentInteraction(details, nextActivityDate) {
   // Get the creation date from details, default to the current date if null
@@ -419,28 +429,241 @@ const provideCompanyAnalytics = async (req, res) => {
   }
 };
 
-const summary_chatbot = async(req,res) => {
+const question = async(req,res) => {
   try{
     const input = req.body.query;
     const question = req.body.question;
     const prompt = `
-      You are an expert financial guide, specializing in clearing any doubts, providing guidance about how to approach, when to approach anything that is useful for a person working in sales,
+      You are an expert financial guide, specializing in clearing any doubts, providing guidance about how to approach, when to approach anything that is useful for a person working in sales.
+      
+      IMPORTANT: Return the response as plain text without any markdown formatting or code blocks.
+      
       Answer the below question based on the given information: ${input}
       Question: ${question}
     `;
 
-    // Create chat session with the prompt
     const chatSession = model.startChat({
       generationConfig,
       history: [],
     });
     
     const response = await chatSession.sendMessage(prompt);
-    res.status(200).json(response.response.candidates[0].content.parts[0].text);
+    const cleanedResponse = cleanGeminiResponse(response.response.text());
+    res.status(200).json({ response: cleanedResponse });
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: error.message });
   }
-}
+};
 
-module.exports = { extractDetails, provideanalytics,clientsummary, summary_chatbot, provideCompanyAnalytics};
+const bestFollowUp = async (req, res) => {
+    try {
+        const response = await axios.get(
+            `${HUBSPOT_API_URL}/contacts/${req.body.id}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+                    'Content-Type': 'application/json',
+                },
+                params: {
+                    properties: DEFAULT_PROPERTIES.join(','),
+                },
+            }
+        );
+
+        const details = response.data.properties;
+        const culturalContext = details.cultural_affinity || 'Indian';
+        const region = details.city || 'Unknown';
+        
+        const prompt = `Act as an expert in Indian business culture and regional diversity. Generate a detailed follow-up strategy for this sales lead.
+
+        Lead Details:
+        - Name: ${details.firstname} ${details.lastname}
+        - Cultural Background: ${culturalContext}
+        - Region/City: ${region}
+        - Language: ${details.language || 'Not specified'}
+        - Industry: ${details.industry || 'Not specified'}
+        - Socio-Economic Segment: ${details.socio_economic_segment || 'Not specified'}
+
+        Consider the following aspects and provide recommendations:
+        1. Cultural sensitivities specific to their background
+        2. Regional customs and business etiquette
+        3. Language and communication preferences
+        4. Festival opportunities for follow-up
+        5. Industry-specific approach
+        6. Preferred communication channels
+        7. Best timing based on regional factors
+        8. Personalized conversation starters
+
+        IMPORTANT: 
+        1. Return ONLY raw JSON without any markdown formatting or code blocks.
+        2. Do not use bullet points or lists in any of the text responses.
+        3. Format all text responses as paragraphs with proper sentences.
+        4. Use commas or semicolons to separate items that would normally be in a list.
+
+        Use this exact structure:
+        {
+            "personalizedStrategy": {
+                "culturalConsiderations": "string with cultural insights",
+                "communicationApproach": "string with communication strategy",
+                "timingRecommendations": "string with timing advice",
+                "businessEtiquette": "string with etiquette guidelines",
+                "conversationStarters": "string with conversation starters in paragraph form",
+                "festivalOpportunities": "string with festivals in paragraph form",
+                "doAndDonts": {
+                    "do": "string with all dos in paragraph form",
+                    "dont": "string with all donts in paragraph form"
+                }
+            }
+        }`;
+
+        const chatSession = model.startChat({
+            generationConfig,
+            history: [],
+        });
+        
+        const result = await chatSession.sendMessage(prompt);
+        const aiResponse = result.response.text();
+        
+        try {
+            const cleanResponse = cleanGeminiResponse(aiResponse);
+            const parsedResponse = JSON.parse(cleanResponse);
+            
+            const followUpStrategy = {
+                contactDetails: {
+                    name: `${details.firstname} ${details.lastname}`,
+                    culturalAffinity: details.cultural_affinity,
+                    region: details.city,
+                    industry: details.industry,
+                    language: details.language,
+                    socioEconomicSegment: details.socio_economic_segment
+                },
+                aiInsights: parsedResponse
+            };
+            console.log(followUpStrategy);
+            res.json(followUpStrategy);
+        } catch (parseError) {
+            console.error('JSON Parse Error:', parseError);
+            console.log('AI Response:', aiResponse);
+            res.status(500).json({ 
+                error: "Failed to parse AI response",
+                details: aiResponse
+            });
+        }
+    } catch (error) {
+        console.error('Request Error:', error);
+        res.status(500).json({ 
+            error: error.message,
+            stack: error.stack
+        });
+    }
+};
+
+const regionalTips = async (req, res) => {
+  console.log("Route hit with id = "+req.body.id);
+    try {
+        const response = await axios.get(
+            `${HUBSPOT_API_URL}/contacts/${req.body.id}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+                    'Content-Type': 'application/json',
+                },
+                params: {
+                    properties: DEFAULT_PROPERTIES.join(','),
+                },
+            }
+        );
+
+        const details = response.data.properties;
+        const region = details.city || 'Unknown';
+        
+        const prompt = `Act as an expert in Indian regional business practices. Generate comprehensive sales and relationship building tips for this specific lead.
+
+        Lead Details:
+        - Name: ${details.firstname} ${details.lastname}
+        - Region/City: ${region}
+        - Cultural Background: ${details.cultural_affinity || 'Not specified'}
+        - Industry: ${details.industry || 'Not specified'}
+        - Language: ${details.language || 'Not specified'}
+        - Socio-Economic Segment: ${details.socio_economic_segment || 'Not specified'}
+
+        Provide detailed regional insights considering:
+        1. Regional business culture specific to ${region}
+        2. Local festivals and important dates
+        3. Key language considerations and respectful phrases
+        4. Local customs that impact business
+        5. Regional meeting preferences
+        6. Local dietary considerations
+        7. Regional gifting customs
+        8. Market dynamics in ${region}
+        9. Industry trends in this region
+        10. Cultural nuances specific to this area
+
+        IMPORTANT: 
+        1. Return ONLY raw JSON without any markdown formatting or code blocks.
+        2. Do not use bullet points or lists in any of the text responses.
+        3. Format all text responses as paragraphs with proper sentences.
+        4. Use commas or semicolons to separate items that would normally be in a list.
+
+        Use this exact structure:
+        {
+            "regionalInsights": {
+                "businessCulture": "string describing regional business culture",
+                "localCustoms": "string describing important customs",
+                "languageTips": "string with all language tips in paragraph form",
+                "festivalCalendar": "string with all festivals in paragraph form",
+                "businessProtocols": "string describing protocols",
+                "marketDynamics": "string describing market insights",
+                "industryTrends": "string describing trends",
+                "culturalNuances": {
+                    "keyConsiderations": "string with all considerations in paragraph form",
+                    "traditions": "string with all traditions in paragraph form",
+                    "etiquette": "string with all etiquette points in paragraph form"
+                }
+            }
+        }`;
+
+        const chatSession = model.startChat({
+            generationConfig,
+            history: [],
+        });
+        
+        const result = await chatSession.sendMessage(prompt);
+        const aiResponse = result.response.text();
+        
+        try {
+            const cleanResponse = cleanGeminiResponse(aiResponse);
+            const parsedResponse = JSON.parse(cleanResponse);
+            
+            const regionalStrategy = {
+                contactDetails: {
+                    name: `${details.firstname} ${details.lastname}`,
+                    region: details.city,
+                    culturalAffinity: details.cultural_affinity,
+                    industry: details.industry,
+                    language: details.language,
+                    socioEconomicSegment: details.socio_economic_segment
+                },
+                aiInsights: parsedResponse
+            };
+            console.log(regionalStrategy);
+            res.json(regionalStrategy);
+        } catch (parseError) {
+            console.error('JSON Parse Error:', parseError);
+            console.log('AI Response:', aiResponse);
+            res.status(500).json({ 
+                error: "Failed to parse AI response",
+                details: aiResponse
+            });
+        }
+    } catch (error) {
+        console.error('Request Error:', error);
+        res.status(500).json({ 
+            error: error.message,
+            stack: error.stack
+        });
+    }
+};
+
+module.exports = { extractDetails, provideanalytics,clientsummary, question, provideCompanyAnalytics, bestFollowUp, regionalTips};

@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("dagger.hilt.android.plugin")
     kotlin("kapt")
-    id("kotlinx-serialization")
+    id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.firebase.crashlytics")
 }
 
@@ -69,7 +69,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.4")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.3")
+    implementation("androidx.navigation:navigation-compose:2.7.5")
+    implementation("androidx.navigation:navigation-runtime-ktx:2.7.5")
+    implementation("androidx.navigation:navigation-common-ktx:2.7.5")
 
     //Lottie-compose
     implementation("com.airbnb.android:lottie-compose:5.2.0")
@@ -98,7 +100,7 @@ dependencies {
     implementation("io.ktor:ktor-client-serialization:2.3.2")
     implementation("io.ktor:ktor-client-logging-jvm:2.3.2")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-//    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
     implementation("io.ktor:ktor-client-gson:2.3.2")
 
     //Dagger Hilt

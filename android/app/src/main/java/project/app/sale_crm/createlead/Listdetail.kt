@@ -103,9 +103,16 @@ fun ListDetail(navController: NavController, createContactViewModel: CreateConta
                 .background(Color.DarkGray, shape = RoundedCornerShape(8.dp))
                 .border(
                     width = 2.dp,
-                    brush = (if (searchQuery.text.isNotEmpty()) purpleGradient else SolidColor(
-                        Color.Transparent
-                    )) as Brush,
+                    brush = if (searchQuery.text.isNotEmpty()) {
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFFAB7AE6),
+                                Color(0xFF33105E)
+                            )
+                        )
+                    } else {
+                        SolidColor(Color.Transparent)
+                    },
                     shape = RoundedCornerShape(8.dp)
                 )
                 .padding(4.dp),
